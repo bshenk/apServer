@@ -30,7 +30,7 @@ app.get('/settings', (req, res) => {
   })
 })
 
-app.use(bodyParser.json())
+app.use(bodyParser.json({ limit: '50mb' }))
 
 app.post('/export', (req, res) => {
   const docx = officegen('docx')
@@ -43,9 +43,45 @@ app.post('/export', (req, res) => {
     console.log(err)
   })
 
-  req.body.bookmarks.forEach(bookmark => {
-    const pObj = docx.createP()
+  const pObj = docx.createP()
 
+  pObj.startBookmark('top')
+  pObj.addText('PROJECT', { font_size: 12, bold: true })
+  pObj.addLineBreak()
+  pObj.addText(req.body.id, { font_size: 24 })
+  pObj.addLineBreak()
+  pObj.addHorizontalLine()
+  pObj.addLineBreak()
+
+  // Searches and Bookmark Links
+  pObj.addText('SEARCHES', { font_size: 11, bold: true })
+  pObj.addLineBreak()
+  req.body.searches.forEach(search => {
+    pObj.addText(search)
+    pObj.addLineBreak()
+  })
+
+  pObj.addLineBreak()
+
+  pObj.addText('GO TO BOOKMARK', { font_size: 11, bold: true })
+  pObj.addLineBreak()
+  req.body.bookmarks.forEach(bookmark => {
+    pObj.addText(bookmark.AttributeValueMap.Number, { hyperlink: bookmark._id, color: '#5D9BE7' })
+    pObj.addLineBreak()
+  })
+
+  pObj.addLineBreak()
+  pObj.addHorizontalLine()
+  pObj.addLineBreak()
+
+  pObj.endBookmark()
+
+  req.body.bookmarks.forEach(bookmark => {
+    var pObj = docx.createP()
+
+    pObj.startBookmark(bookmark._id)
+    pObj.addText('Back to Top', { hyperlink: 'top', color: '#5D9BE7' })
+    pObj.addLineBreak()
     pObj.addText(bookmark.AttributeValueMap.Number, { font_size: 20 })
     pObj.addLineBreak()
     pObj.addText(bookmark.AttributeValueMap.Title, { font_size: 16 })
@@ -54,7 +90,7 @@ app.post('/export', (req, res) => {
 
     var urlString = bookmark.AttributeValueMap.UrlString
     if (urlString.indexOf('?') > -1) urlString = urlString.substring(0, urlString.indexOf('?'))
-    pObj.addText('View Full Patent', { link: urlString })
+    pObj.addText('View Full Patent', { link: urlString, color: '#5D9BE7' })
 
     pObj.addLineBreak()
     pObj.addLineBreak()
@@ -72,11 +108,40 @@ app.post('/export', (req, res) => {
 
     pObj.addLineBreak()
 
+    pObj.addText('IMAGES', { font_size: 10, bold: true })
+    pObj.addLineBreak()
+
+    var images = bookmark.AttributeValueMap.ImageUrls
+
+    if (images.length > 0) {
+      images.forEach((url, i) => {
+        pObj.addText(`${i + 1}${i + 1 === images.length ? '' : ','} `, { link: url, color: '#5D9BE7' })
+      })
+    } else {
+      pObj.addText('No images for this patent.')
+    }
+
+    pObj.addLineBreak()
+    pObj.addLineBreak()
+
+    pObj.addText('ABSTRACT', { font_size: 10, bold: true })
+    pObj.addLineBreak()
     pObj.addText(bookmark.AttributeValueMap.Abstract, { font_size: 12 })
 
     pObj.addLineBreak()
+    pObj.addLineBreak()
 
-    pObj.addHorizontalLine()
+    pObj.addText('CLAIMS', { font_size: 10, bold: true })
+    pObj.addLineBreak()
+    bookmark.AttributeValueMap.Claims.forEach(claim => {
+      pObj.addText(claim)
+      pObj.addLineBreak()
+      pObj.addLineBreak()
+    })
+
+    pObj.endBookmark()
+
+    docx.putPageBreak()
   })
 
   docx.generate(res)
