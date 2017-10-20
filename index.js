@@ -63,7 +63,7 @@ app.post('/export', (req, res) => {
 
   pObj.addLineBreak()
 
-  pObj.addText('GO TO BOOKMARK', { font_size: 11, bold: true })
+  pObj.addText('INDEX OF BOOKMARKED PATENTS (Click to Jump to Bookmark)', { font_size: 11, bold: true })
   pObj.addLineBreak()
   req.body.bookmarks.forEach(bookmark => {
     pObj.addText(bookmark.AttributeValueMap.Number, { hyperlink: bookmark._id, color: '#5D9BE7' })
@@ -72,6 +72,9 @@ app.post('/export', (req, res) => {
 
   pObj.addLineBreak()
   pObj.addHorizontalLine()
+  pObj.addLineBreak()
+
+  pObj.addText('DETAILS OF BOOKMARKED PATENTS', { font_size: 11, bold: true })
   pObj.addLineBreak()
 
   pObj.endBookmark()
