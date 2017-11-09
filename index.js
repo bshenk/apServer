@@ -90,6 +90,14 @@ app.post('/export', (req, res) => {
 
     var urlString = bookmark.AttributeValueMap.UrlString
     if (urlString.indexOf('?') > -1) urlString = urlString.substring(0, urlString.indexOf('?'))
+
+    // add https
+    var pattern = /^((http|https):\/\/)/
+
+    if (!pattern.test(urlString)) {
+      urlString = 'https://' + urlString
+    }
+
     pObj.addText('View Full Patent', { link: urlString, color: '#5D9BE7' })
 
     pObj.addLineBreak()
