@@ -3,6 +3,7 @@ const app = express()
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const officegen = require('officegen')
+const https = require('https')
 const fs = require('fs')
 const PORT = 3030
 
@@ -158,6 +159,13 @@ app.post('/export', (req, res) => {
   docx.generate(res)
 })
 
-app.listen(PORT, () => {
-  console.log(`AxonPatent FE server running at: ${PORT}`)
-})
+const options = {
+  cert: fs.readFileSync('/etc/letsencrypt/live/dev.patent.axonai.com/fulllchain.pem'),
+  key: fs.readFileSync('/etc/letsencypt/live/dev.patent.axonai.com/privkey.pem')
+}
+
+https.createServer(options, app).listen(PORT)
+
+// app.listen(PORT, () => {
+//   console.log(`AxonPatent FE server running at: ${PORT}`)
+// })
