@@ -160,7 +160,7 @@ app.post('/export', (req, res) => {
 })
 
 const options = {
-  cert: fs.readFileSync('/etc/letsencrypt/live/dev.patent.axonai.com/fulllchain.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/dev.patent.axonai.com/fullchain.pem'),
   key: fs.readFileSync('/etc/letsencypt/live/dev.patent.axonai.com/privkey.pem')
 }
 
