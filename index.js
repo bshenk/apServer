@@ -3,6 +3,7 @@ const app = express()
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const officegen = require('officegen')
+const https = require('https')
 const fs = require('fs')
 const PORT = 3030
 
@@ -94,9 +95,23 @@ app.post('/export', (req, res) => {
 
     pObj.addLineBreak()
 
+<<<<<<< HEAD
     //var urlString = bookmark.AttributeValueMap.UrlString
     //if (urlString.indexOf('?') > -1) urlString = urlString.substring(0, urlString.indexOf('?'))
     //pObj.addText('View Full Patent', { link: urlString, color: '#5D9BE7' })
+=======
+    var urlString = bookmark.AttributeValueMap.UrlString
+    if (urlString.indexOf('?') > -1) urlString = urlString.substring(0, urlString.indexOf('?'))
+
+    // add https
+    var pattern = /^((http|https):\/\/)/
+
+    if (!pattern.test(urlString)) {
+      urlString = 'https://' + urlString
+    }
+
+    pObj.addText('View Full Patent', { link: urlString, color: '#5D9BE7' })
+>>>>>>> 51676e76f3bd8b8ae9f0b432996fe4f5b0b4cfd2
 
     pObj.addLineBreak()
     pObj.addLineBreak()
@@ -153,6 +168,13 @@ app.post('/export', (req, res) => {
   docx.generate(res)
 })
 
-app.listen(PORT, () => {
-  console.log(`AxonPatent FE server running at: ${PORT}`)
-})
+const options = {
+  cert: fs.readFileSync('/etc/letsencrypt/live/dev.patent.axonai.com/fullchain.pem'),
+  key: fs.readFileSync('/etc/letsencrypt/live/dev.patent.axonai.com/privkey.pem')
+}
+
+https.createServer(options, app).listen(PORT)
+
+// app.listen(PORT, () => {
+//   console.log(`AxonPatent FE server running at: ${PORT}`)
+// })
