@@ -33,7 +33,10 @@ app.get('/settings', (req, res) => {
 app.use(bodyParser.json({ limit: '50mb' }))
 
 app.post('/export', (req, res) => {
-  const docx = officegen('docx')
+  const docx = officegen({
+	type: 'docx',
+	pageMargins: { top: 500, right: 500, bottom: 500, left: 500 }
+})
 
   docx.on('finalize', () => {
     console.log('Document finalized.')
@@ -91,9 +94,9 @@ app.post('/export', (req, res) => {
 
     pObj.addLineBreak()
 
-    var urlString = bookmark.AttributeValueMap.UrlString
-    if (urlString.indexOf('?') > -1) urlString = urlString.substring(0, urlString.indexOf('?'))
-    pObj.addText('View Full Patent', { link: urlString, color: '#5D9BE7' })
+    //var urlString = bookmark.AttributeValueMap.UrlString
+    //if (urlString.indexOf('?') > -1) urlString = urlString.substring(0, urlString.indexOf('?'))
+    //pObj.addText('View Full Patent', { link: urlString, color: '#5D9BE7' })
 
     pObj.addLineBreak()
     pObj.addLineBreak()
