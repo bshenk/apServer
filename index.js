@@ -94,8 +94,6 @@ app.post('/export', (req, res) => {
     pObj.addText(bookmark.AttributeValueMap.Title, { font_size: 16 })
 
     pObj.addLineBreak()
-
-    pObj.addLineBreak()
     pObj.addLineBreak()
 
     const classifications = ['CooperativeClassifications', 'EuropeanClassifications', 'USClassifications', 'InternationalClassifications']
@@ -150,13 +148,13 @@ app.post('/export', (req, res) => {
   docx.generate(res)
 })
 
-const options = {
-  cert: fs.readFileSync('/etc/letsencrypt/live/dev.patent.axonai.com/fullchain.pem'),
-  key: fs.readFileSync('/etc/letsencrypt/live/dev.patent.axonai.com/privkey.pem')
-}
+// const options = {
+//   cert: fs.readFileSync('/etc/letsencrypt/live/dev.patent.axonai.com/fullchain.pem'),
+//   key: fs.readFileSync('/etc/letsencrypt/live/dev.patent.axonai.com/privkey.pem')
+// }
 
-https.createServer(options, app).listen(PORT)
+// https.createServer(options, app).listen(PORT)
 
-// app.listen(PORT, () => {
-//   console.log(`AxonPatent FE server running at: ${PORT}`)
-// })
+app.listen(PORT, () => {
+  console.log(`AxonPatent FE server running at: ${PORT}`)
+})
