@@ -35,9 +35,9 @@ app.use(bodyParser.json({ limit: '50mb' }))
 
 app.post('/export', (req, res) => {
   const docx = officegen({
-	type: 'docx',
-	pageMargins: { top: 500, right: 500, bottom: 500, left: 500 }
-})
+    type: 'docx',
+    pageMargins: { top: 500, right: 500, bottom: 500, left: 500 }
+  })
 
   docx.on('finalize', () => {
     console.log('Document finalized.')
@@ -94,24 +94,6 @@ app.post('/export', (req, res) => {
     pObj.addText(bookmark.AttributeValueMap.Title, { font_size: 16 })
 
     pObj.addLineBreak()
-
-<<<<<<< HEAD
-    //var urlString = bookmark.AttributeValueMap.UrlString
-    //if (urlString.indexOf('?') > -1) urlString = urlString.substring(0, urlString.indexOf('?'))
-    //pObj.addText('View Full Patent', { link: urlString, color: '#5D9BE7' })
-=======
-    var urlString = bookmark.AttributeValueMap.UrlString
-    if (urlString.indexOf('?') > -1) urlString = urlString.substring(0, urlString.indexOf('?'))
-
-    // add https
-    var pattern = /^((http|https):\/\/)/
-
-    if (!pattern.test(urlString)) {
-      urlString = 'https://' + urlString
-    }
-
-    pObj.addText('View Full Patent', { link: urlString, color: '#5D9BE7' })
->>>>>>> 51676e76f3bd8b8ae9f0b432996fe4f5b0b4cfd2
 
     pObj.addLineBreak()
     pObj.addLineBreak()
