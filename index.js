@@ -116,11 +116,14 @@ app.post('/export', (req, res) => {
 
     if (images.length > 0) {
       images.forEach((url, i) => {
+	url = `https://${req.body.host}${url}`
         pObj.addText(`${i + 1}${i + 1 === images.length ? '' : ','} `, { link: url, color: '#5D9BE7' })
       })
     } else {
       pObj.addText('No images for this patent.')
     }
+
+
 
     pObj.addLineBreak()
     pObj.addLineBreak()
