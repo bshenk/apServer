@@ -116,14 +116,12 @@ app.post('/export', (req, res) => {
 
     if (images.length > 0) {
       images.forEach((url, i) => {
-	url = `https://${req.body.host}${url}`
+	      url = `http://patentimages.convergentai.net${url}`
         pObj.addText(`${i + 1}${i + 1 === images.length ? '' : ','} `, { link: url, color: '#5D9BE7' })
       })
     } else {
       pObj.addText('No images for this patent.')
     }
-
-
 
     pObj.addLineBreak()
     pObj.addLineBreak()
@@ -156,8 +154,8 @@ const options = {
   key: fs.readFileSync('/etc/letsencrypt/live/patent.convergentai.net/privkey.pem')
 }
 
- https.createServer(options, app).listen(PORT)
+https.createServer(options, app).listen(PORT)
 
-//app.listen(PORT, () => {
+// app.listen(PORT, () => {
 //  console.log(`AxonPatent FE server running at: ${PORT}`)
-//})
+// })
