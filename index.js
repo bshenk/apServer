@@ -7,6 +7,8 @@ const https = require('https')
 const fs = require('fs')
 const PORT = 3030
 
+const getMetricsCSV = require('./getMetricsCSV.js').getMetricsCSV
+
 function readJSONFile (filename, callback) {
   fs.readFile(filename, function (err, data) {
     if (err) {
@@ -21,7 +23,26 @@ function readJSONFile (filename, callback) {
   })
 }
 
-app.use(cors())
+var whitelist = ['http://localhost', 'http://localhost:3000']
+var corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
+
+app.use(bodyParser.json({ limit: '50mb' }))
+app.use(cors(corsOptions))
+
+app.post('/metrics', (req, res) => {
+  const { config, users } = req.body
+  getMetricsCSV(config, users)
+    .then(response => res.send(response))
+    .catch(error => res.status(500).send(error))
+})
 
 app.get('/settings', (req, res) => {
   readJSONFile('./settings.json', (err, json) => {
@@ -30,8 +51,6 @@ app.get('/settings', (req, res) => {
     res.send(json)
   })
 })
-
-app.use(bodyParser.json({ limit: '50mb' }))
 
 app.post('/export', (req, res) => {
   const docx = officegen({
@@ -147,15 +166,17 @@ app.post('/export', (req, res) => {
   })
 
   docx.generate(res)
+
+  console.log(res.getHeaders())
 })
 
-const options = {
-  cert: fs.readFileSync('/etc/letsencrypt/live/patent.convergentai.net/fullchain.pem'),
-  key: fs.readFileSync('/etc/letsencrypt/live/patent.convergentai.net/privkey.pem')
-}
+// const options = {
+//   cert: fs.readFileSync('/etc/letsencrypt/live/patent.convergentai.net/fullchain.pem'),
+//   key: fs.readFileSync('/etc/letsencrypt/live/patent.convergentai.net/privkey.pem')
+// }
 
-https.createServer(options, app).listen(PORT)
+// https.createServer(options, app).listen(PORT)
 
-// app.listen(PORT, () => {
-//  console.log(`AxonPatent FE server running at: ${PORT}`)
-// })
+app.listen(PORT, () => {
+  console.log(`AxonPatent FE server running at: ${PORT}`)
+})
