@@ -64,8 +64,6 @@ function getMetricsCSV (config, users) {
       var projects = await mainDB.collection(config.collection).find().toArray(function(err, result) {
         if (err) reject(err)
 
-        console.log(result)
-
         result.forEach(document => {
   
           // Getting total number of projects for each user

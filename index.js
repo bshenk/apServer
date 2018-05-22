@@ -35,7 +35,7 @@ var corsOptions = {
 }
 
 app.use(bodyParser.json({ limit: '50mb' }))
-app.use(cors(corsOptions))
+app.use(cors())
 
 app.post('/metrics', (req, res) => {
   const { config, users } = req.body
