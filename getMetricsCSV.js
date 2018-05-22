@@ -61,9 +61,12 @@ function getMetricsCSV (config, users) {
         }
       }
   
-      var projects = await mainDB.collection(config.collection).find().toArray(function(err, result){
+      var projects = await mainDB.collection(config.collection).find().toArray(function(err, result) {
+        if (err) reject(err)
+
+        console.log(result)
+
         result.forEach(document => {
-          if (err) reject(err)
   
           // Getting total number of projects for each user
           if(projectsCount.hasOwnProperty(document.userHash)){
@@ -113,18 +116,11 @@ function getMetricsCSV (config, users) {
         // Adding daily metrics
         csv[2] = ["", "", "", "", todayData.newUsersToday, todayData.activeProjectsToday]
   
-        // Write out csv object to a CSV file here
-        // fs.writeFile("./test.csv", 
-        //   csv.map(function(row) { return (row + '\r') }), 
-        //   (err) => {
-        //     if (err) throw err;
-        //     console.log("Wrote out to file!")
-        // })
+        // close db connection now that we're done with the query
+        db.close()
+
         resolve(csv)
       })
-  
-      // close db connection now that we're done with the query
-      db.close()
     })
   })
 }
