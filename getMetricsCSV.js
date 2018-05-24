@@ -233,7 +233,7 @@ function getMetricsCSV (config, users) {
 
         let averages = {}
         Object.keys(totals).forEach(key => {
-          averages[key] = totals[key] / users.length
+          averages[key] = (totals[key] / users.length).toFixed(2)
         })
 
         // Adding empty row before totals/averages
