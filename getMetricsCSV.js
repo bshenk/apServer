@@ -27,7 +27,6 @@ function getMetricsCSV (config, users) {
     var actionsCount     = {}
     var actionsPastWeek  = {}
     var activeProjectsPastWeek = {}
-    var loginsPastWeek = {}
     
     var csv = []
     csv.push(["", "PatentID User Metrics"])
@@ -66,7 +65,7 @@ function getMetricsCSV (config, users) {
       // Fillilng in initial user metrics with data from the frontend
       for(var user in users) {
         if(users.hasOwnProperty(user)) {
-          var {
+          let {
             _id,
             email,
             promo,
@@ -78,8 +77,14 @@ function getMetricsCSV (config, users) {
           } = users[user]
 
           logins = logins || []
+          let loginsLastWeek = logins.map(login => login > oneWeekAgo.getTime()).length
 
-          if (daysSinceLastLogin === null) daysSinceLastLogin = 'No logins recorded.'
+          if (daysSinceLastLogin === null) daysSinceLastLogin = 'n/a'
+          if (totalLogins === 0) {
+            totalLogins = 'n/a'
+            loginsLastWeek = 'n/a'
+          }
+          
 
           if(new Date(createdAt).getTime() >= midnight) { todayData.newUsersToday++ }
   
@@ -88,7 +93,6 @@ function getMetricsCSV (config, users) {
           actionsCount[_id]           = 0
           actionsPastWeek[_id]        = 0
           activeProjectsPastWeek[_id] = 0
-          loginsPastWeek[_id]         = 0
   
           csv.push([
             _id, 
@@ -102,7 +106,7 @@ function getMetricsCSV (config, users) {
             0, // total projects: index 8
             0, // total actions: index 9,
             "",
-            logins.map(login => login > oneWeekAgo.getTime()).length, // logins last week: index 11
+            loginsLastWeek, // logins last week: index 11
             0, // projects last week: index 12
             0, // actions last week: index 13
           ])
