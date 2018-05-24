@@ -66,7 +66,7 @@ function getMetricsCSV (config, users) {
       // Fillilng in initial user metrics with data from the frontend
       for(var user in users) {
         if(users.hasOwnProperty(user)) {
-          let {
+          var {
             _id,
             email,
             promo,
@@ -78,16 +78,17 @@ function getMetricsCSV (config, users) {
           } = users[user]
 
           logins = logins || []
-          daysSinceLastLogin = daysSinceLastLogin || 'No logins recorded.'
+
+          if (daysSinceLastLogin === null) daysSinceLastLogin = 'No logins recorded.'
 
           if(new Date(createdAt).getTime() >= midnight) { todayData.newUsersToday++ }
   
-          projectsCount._id          = 0
-          projectsPastWeek._id       = 0
-          actionsCount._id           = 0
-          actionsPastWeek._id        = 0
-          activeProjectsPastWeek._id = 0
-          loginsPastWeek._id         = 0
+          projectsCount[_id]          = 0
+          projectsPastWeek[_id]       = 0
+          actionsCount[_id]           = 0
+          actionsPastWeek[_id]        = 0
+          activeProjectsPastWeek[_id] = 0
+          loginsPastWeek[_id]         = 0
   
           csv.push([
             _id, 
@@ -125,10 +126,12 @@ function getMetricsCSV (config, users) {
             var happenedPastWeek = action.mTimeStamp > oneWeekAgo.getTime()
             var newProjectAction = action.command === 'startInvestigation'
 
-            if (happenedPastWeek) projectActivePastWeek = true
-  
             actionsCount[document.userHash]++
-            if(happenedPastWeek) { actionsPastWeek[document.userHash]++ }
+
+            if (happenedPastWeek) { 
+              actionsPastWeek[document.userHash]++
+              projectActivePastWeek = true
+            }
   
             if(newProjectAction){
               if(happenedToday){
@@ -145,13 +148,13 @@ function getMetricsCSV (config, users) {
             if (happenedToday){ activeToday = true; }
           })
 
-          if (projectActivePastWeek) projectActivePastWeek[document.userHash]++
+          if (projectActivePastWeek) activeProjectsPastWeek[document.userHash]++
   
           if(activeToday){
             todayData.activeProjectsToday++;
             activeToday = false;
           }
-  
+
           // Filling in missing user data here
           for(var outer = 0; outer < csv.length; outer++){
             if(csv[outer][0] === document.userHash){
