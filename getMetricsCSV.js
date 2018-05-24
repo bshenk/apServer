@@ -26,12 +26,29 @@ function getMetricsCSV (config, users) {
     var projectsPastWeek = {}
     var actionsCount     = {}
     var actionsPastWeek  = {}
+    var activeProjectsPastWeek = {}
+    var loginsPastWeek = {}
     
     var csv = []
-    csv.push(["", "PatentID User Metrics" , "", "", "", "Today"])
-    csv.push([formatDate(midnight)    , "", "", "", "# of New Users Today", "# of Active Projects Today"])
-    csv.push([])
-    csv.push(["User Name", "Email", "Promo", "Sign Up Date", "# of Days Since Sign Up", "# of Projects", "# of Projects Started in Past Week", "# of Actions", "# of Actions in Past Week", "# of Logins", "# of Days Since Last Login"])  
+    csv.push(["", "PatentID User Metrics"])
+    csv.push([formatDate(midnight)])
+    csv.push(["", "", "", "", "", "", "", "Lifetime Activity (Since Signup)", "", "", "", "Recent Activity (Last 7 Days)"])
+    csv.push([
+      "User Name", 
+      "Email", 
+      "Promo", 
+      "Date of Sign Up", 
+      "# of Days Since Sign Up", 
+      "# of Days Since Last Login",
+      "",
+      "# of Logins Since Sign Up",
+      "# of Projects Active Since Sign Up",
+      "# of Actions Since Sign Up",
+      "",
+      "# of Logins Last 7 Days", 
+      "# of Projects Active Last 7 Days", 
+      "# of Actions Last 7 Days", 
+    ])  
   
     MongoClient.connect(url, { useNewUrlParser: true }, async function(err, db) {
       assert.equal(null, err);
@@ -43,21 +60,51 @@ function getMetricsCSV (config, users) {
       var todayData = {
         newUsersToday: 0,
         newProjectsToday: 0,
-        activeProjectsToday: 0
+        activeProjectsToday: 0,
       }
   
       // Fillilng in initial user metrics with data from the frontend
       for(var user in users) {
         if(users.hasOwnProperty(user)) {
-          if(new Date(users[user].createdAt).getTime() >= midnight) { todayData.newUsersToday++ }
+          let {
+            _id,
+            email,
+            promo,
+            createdAt,
+            daysSinceSignUp,
+            daysSinceLastLogin,
+            logins,
+            totalLogins
+          } = users[user]
+
+          logins = logins || []
+          daysSinceLastLogin = daysSinceLastLogin || 'No logins recorded.'
+
+          if(new Date(createdAt).getTime() >= midnight) { todayData.newUsersToday++ }
   
-          projectsCount[users[user]._id]    = 0
-          projectsPastWeek[users[user]._id] = 0
-          actionsCount[users[user]._id]     = 0
-          actionsPastWeek[users[user]._id]  = 0
+          projectsCount._id          = 0
+          projectsPastWeek._id       = 0
+          actionsCount._id           = 0
+          actionsPastWeek._id        = 0
+          activeProjectsPastWeek._id = 0
+          loginsPastWeek._id         = 0
   
-          csv.push([users[user]._id, users[user].email, users[user].promo, formatDate(new Date(users[user].createdAt)), 
-            users[user].daysSinceSignUp, 0, 0, 0, 0, users[user].totalLogins, users[user].daysSinceLastLogin])
+          csv.push([
+            _id, 
+            email, 
+            promo, 
+            formatDate(new Date(createdAt)), 
+            daysSinceSignUp,
+            daysSinceLastLogin,
+            "",
+            totalLogins,
+            0, // total projects: index 8
+            0, // total actions: index 9,
+            "",
+            logins.map(login => login > oneWeekAgo.getTime()).length, // logins last week: index 11
+            0, // projects last week: index 12
+            0, // actions last week: index 13
+          ])
         }
       }
   
@@ -65,7 +112,8 @@ function getMetricsCSV (config, users) {
         if (err) reject(err)
 
         result.forEach(document => {
-  
+          let projectActivePastWeek = false
+
           // Getting total number of projects for each user
           if(projectsCount.hasOwnProperty(document.userHash)){
             projectsCount[document.userHash]++
@@ -76,6 +124,8 @@ function getMetricsCSV (config, users) {
             var happenedToday = action.mTimeStamp > midnight.getTime()
             var happenedPastWeek = action.mTimeStamp > oneWeekAgo.getTime()
             var newProjectAction = action.command === 'startInvestigation'
+
+            if (happenedPastWeek) projectActivePastWeek = true
   
             actionsCount[document.userHash]++
             if(happenedPastWeek) { actionsPastWeek[document.userHash]++ }
@@ -94,6 +144,8 @@ function getMetricsCSV (config, users) {
             // Projects Active Today
             if (happenedToday){ activeToday = true; }
           })
+
+          if (projectActivePastWeek) projectActivePastWeek[document.userHash]++
   
           if(activeToday){
             todayData.activeProjectsToday++;
@@ -103,16 +155,16 @@ function getMetricsCSV (config, users) {
           // Filling in missing user data here
           for(var outer = 0; outer < csv.length; outer++){
             if(csv[outer][0] === document.userHash){
-              csv[outer][5] = projectsCount[document.userHash]
-              csv[outer][6] = projectsPastWeek[document.userHash]
-              csv[outer][7] = actionsCount[document.userHash]
-              csv[outer][8] = actionsPastWeek[document.userHash]
+              csv[outer][8] = projectsCount[document.userHash]
+              csv[outer][9] = actionsCount[document.userHash]
+              csv[outer][12] = projectsPastWeek[document.userHash]
+              csv[outer][13] = actionsPastWeek[document.userHash]
             }
           }
         })
-      
+
         // Adding daily metrics
-        csv[2] = ["", "", "", "", todayData.newUsersToday, todayData.activeProjectsToday]
+        // csv[2] = ["", "", "", "", todayData.newUsersToday, todayData.activeProjectsToday]
   
         // close db connection now that we're done with the query
         db.close()
