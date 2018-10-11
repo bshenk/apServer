@@ -89,7 +89,7 @@ app.post('/export', (req, res) => {
   pObj.addText('INDEX OF BOOKMARKED PATENTS (Click to Jump to Bookmark)', { font_size: 11, bold: true })
   pObj.addLineBreak()
   req.body.bookmarks.forEach(bookmark => {
-    pObj.addText(bookmark.AttributeValueMap.Number, { hyperlink: bookmark._id, color: '#5D9BE7' })
+    pObj.addText(`${bookmark.AttributeValueMap.Number}: ${bookmark.AttributeValueMap.Title}`, { hyperlink: bookmark._id, color: '#5D9BE7' })
     pObj.addLineBreak()
   })
 
