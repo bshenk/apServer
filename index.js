@@ -83,7 +83,7 @@ function generateXlsx (req) {
   sheet.data.push([projectName])
   sheet.data.push([''])
 
-  let { number, abstract, dates, title, images, classifications } = config.documents
+  let { number, abstract, dates, title, images, classifications, description, claims } = config.documents
 
   if (config.bookmarks) {
     // set bookmarks
@@ -91,7 +91,9 @@ function generateXlsx (req) {
     sheet.data.push([
       'Number', 
       'Title', 
-      'Abstract', 
+      'Abstract',
+      'Description',
+      'Claims',
       'US Class',
       'EU Class', 
       'Int Class', 
@@ -117,19 +119,23 @@ function generateXlsx (req) {
         FieldClassifications,
         PriorityDate,
         PublicationDate,
-        FilingDate
+        FilingDate,
+        Description,
+        Claims
       } = bookmark.AttributeValueMap
 
       sheet.data.push([
         number ? Number : '',
         title ? Title : '',
         abstract ? Abstract : '',
-        classifications ? USClassifications.join(', ') : '',
-        classifications ? EuropeanClassifications.join(', ') : '',
-        classifications ? InternationalClassifications.join(', ') : '',
-        classifications ? FieldClassifications.join(', ') : '',
-        classifications ? CooperativeClassifications.join(', ') : '',
-        images ? ImageUrls : '',
+        description ? Description.join(', ').substring(0, 30000) : '',
+        claims ? Claims.join(', ').substring(0, 30000) : '',
+        classifications ? USClassifications.join(', ').substring(0, 30000) : '',
+        classifications ? EuropeanClassifications.join(', ').substring(0, 30000) : '',
+        classifications ? InternationalClassifications.join(', ').substring(0, 30000) : '',
+        classifications ? FieldClassifications.join(', ').substring(0, 30000) : '',
+        classifications ? CooperativeClassifications.join(', ').substring(0, 30000) : '',
+        images ? ImageUrls.join(', ') : '',
         dates ? PriorityDate : '',
         dates ? FilingDate : '',
         dates ? PublicationDate : ''
@@ -147,6 +153,8 @@ function generateXlsx (req) {
       'Number', 
       'Title', 
       'Abstract', 
+      'Description',
+      'Claims',
       'US Class',
       'EU Class', 
       'Int Class', 
@@ -172,19 +180,23 @@ function generateXlsx (req) {
         FieldClassifications,
         PriorityDate,
         PublicationDate,
-        FilingDate
+        FilingDate,
+        Description,
+        Claims
       } = reference.AttributeValueMap
 
       sheet.data.push([
         number ? Number : '',
         title ? Title : '',
         abstract ? Abstract : '',
-        classifications ? USClassifications.join(', ') : '',
-        classifications ? EuropeanClassifications.join(', ') : '',
-        classifications ? InternationalClassifications.join(', ') : '',
-        classifications ? FieldClassifications.join(', ') : '',
-        classifications ? CooperativeClassifications.join(', ') : '',
-        images ? ImageUrls : '',
+        description ? Description.join(', ').substring(0, 30000) : '',
+        claims ? Claims.join(', ').substring(0, 30000) : '',
+        classifications ? USClassifications.join(', ').substring(0, 30000) : '',
+        classifications ? EuropeanClassifications.join(', ').substring(0, 30000) : '',
+        classifications ? InternationalClassifications.join(', ').substring(0, 30000) : '',
+        classifications ? FieldClassifications.join(', ').substring(0, 30000) : '',
+        classifications ? CooperativeClassifications.join(', ').substring(0, 30000) : '',
+        images ? ImageUrls.join(', ').substring(0, 30000) : '',
         dates ? PriorityDate : '',
         dates ? FilingDate : '',
         dates ? PublicationDate : ''
@@ -344,6 +356,28 @@ function generateDocx (req) {
   
         pObj.addLineBreak()
         pObj.addLineBreak()
+      }
+
+      if (config.documents.description) {
+        pObj.addText('DESCRIPTION', { font_size: 10, bold: true })
+        pObj.addLineBreak()
+        
+        bookmark.AttributeValueMap.Description.forEach(desc => {
+          pObj.addText(desc)
+          pObj.addLineBreak()
+        })
+      }
+
+      if (config.documents.claims) {
+        pObj.addLineBreak()
+        
+        pObj.addText('CLAIMS', { font_size: 10, bold: true })
+        pObj.addLineBreak()
+        
+        bookmark.AttributeValueMap.Claims.forEach(claim => {
+          pObj.addText(claim)
+          pObj.addLineBreak()
+        })
       }
 
       // if (config.documents.claims) {
