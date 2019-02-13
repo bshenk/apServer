@@ -83,7 +83,7 @@ function generateXlsx (req) {
   sheet.data.push([projectName])
   sheet.data.push([''])
 
-  let { number, abstract, dates, title, images, classifications, description, claims } = config.documents
+  let { number, abstract, dates, title, images, classifications, description, claims, assignees, inventors } = config.documents
 
   if (config.bookmarks) {
     // set bookmarks
@@ -102,7 +102,9 @@ function generateXlsx (req) {
       'Images', 
       'Priority Date', 
       'Filing Date', 
-      'Publication Date'
+      'Publication Date',
+      'Assignees',
+      'Inventors'
     ])
 
     data.bookmarks.forEach((bookmark, i) => {
@@ -121,7 +123,9 @@ function generateXlsx (req) {
         PublicationDate,
         FilingDate,
         Description,
-        Claims
+        Claims,
+        Assignee,
+        Inventor
       } = bookmark.AttributeValueMap
 
       sheet.data.push([
@@ -138,7 +142,9 @@ function generateXlsx (req) {
         images ? ImageUrls.join(', ') : '',
         dates ? PriorityDate : '',
         dates ? FilingDate : '',
-        dates ? PublicationDate : ''
+        dates ? PublicationDate : '',
+        assignees && Assignee ? Assignee.join(', ') : '',
+        inventors && Inventor ? Inventor.join(', ') : ''
       ])
     })
 
@@ -163,7 +169,9 @@ function generateXlsx (req) {
       'Images', 
       'Priority Date', 
       'Filing Date', 
-      'Publication Date'
+      'Publication Date',
+      'Assignees',
+      'Inventors'
     ])
 
     data.references.forEach((reference, i) => {
@@ -182,7 +190,9 @@ function generateXlsx (req) {
         PublicationDate,
         FilingDate,
         Description,
-        Claims
+        Claims,
+        Assignee,
+        Inventor
       } = reference.AttributeValueMap
 
       sheet.data.push([
@@ -199,7 +209,9 @@ function generateXlsx (req) {
         images ? ImageUrls.join(', ').substring(0, 30000) : '',
         dates ? PriorityDate : '',
         dates ? FilingDate : '',
-        dates ? PublicationDate : ''
+        dates ? PublicationDate : '',
+        assignees && Assignee ? Assignee.join(', ') : '',
+        inventors && Inventor ? Inventor.join(', ') : ''
       ])
     })
 
@@ -207,21 +219,21 @@ function generateXlsx (req) {
   }
 
   // set searches
-  if (config.searches) {
+  if (config.inputs) {
     sheet.data.push(['SEARCHES'])
     sheet.data.push(data.searches)
     sheet.data.push([''])
   }
 
   // set uploads 
-  if (config.uploads) {
+  if (config.inputs) {
     sheet.data.push(['UPLOADS'])
     sheet.data.push(data.uploads)
     sheet.data.push([''])
   }
 
   // set terms
-  if (config.terms) {
+  if (config.inputs) {
     sheet.data.push(['TERMS'])
     sheet.data.push(Object.keys(data.terms).map(key => `${key}: ${data.terms[key]}`))
   }
@@ -247,298 +259,212 @@ function generateDocx (req) {
   const pObj = docx.createP()
 
   pObj.startBookmark('top')
-  pObj.addText('PROJECT', { font_size: 12, bold: true })
+  pObj.addText('PROJECT', { font_size: 10, bold: true })
   pObj.addLineBreak()
   pObj.addText(projectName, { font_size: 24 })
   pObj.addLineBreak()
-
-  pObj.addText('Go to Interest Model', { font_size: 16, hyperlink: 'interest-model', color: '#5D9BE7' })
-  pObj.addLineBreak()
   pObj.addLineBreak()
 
+  if (config.inputs) {
+    pObj.addText('Interest Model Summary', { font_size: 18 })
+    pObj.addLineBreak()
 
-  if (config.bookmarks) {
+    pObj.addText('SEARCHES', { font_size: 11, bold: true })
+    pObj.addLineBreak()
+    data.searches.forEach(search => {
+      pObj.addText(search)
+      pObj.addLineBreak()
+    })
+
+    pObj.addLineBreak()
+  
+    pObj.addText('UPLOADS', { font_size: 11, bold: true })
+    pObj.addLineBreak()
+    data.uploads.forEach(upload => {
+      pObj.addText(upload)
+      pObj.addLineBreak()
+    })
+
+    pObj.addLineBreak()
+
     pObj.addText('INDEX OF BOOKMARKED PATENTS (Click to Jump to Bookmark)', { font_size: 11, bold: true })
     pObj.addLineBreak()
     data.bookmarks.forEach(bookmark => {
-      pObj.addText(`${bookmark.AttributeValueMap.Number}: ${bookmark.AttributeValueMap.Title}`, { hyperlink: bookmark._id, color: '#5D9BE7' })
+      pObj.addText(`${bookmark.AttributeValueMap.Number}: ${bookmark.AttributeValueMap.Title}`, { hyperlink: `${bookmark._id}-Bookmarked`, color: '#5D9BE7' })
       pObj.addLineBreak()
     })
 
     pObj.addLineBreak()
-  }
 
-  if (config.references) {
     pObj.addText('INDEX OF REFERENCED PATENTS (Click to Jump to Reference)', { font_size: 11, bold: true })
     pObj.addLineBreak()
     data.references.forEach(bookmark => {
-      pObj.addText(`${bookmark.AttributeValueMap.Number}: ${bookmark.AttributeValueMap.Title}`, { hyperlink: `${bookmark._id}-ref`, color: '#5D9BE7' })
+      pObj.addText(`${bookmark.AttributeValueMap.Number}: ${bookmark.AttributeValueMap.Title}`, { hyperlink: `${bookmark._id}-Referenced`, color: '#5D9BE7' })
       pObj.addLineBreak()
     })
+
+    pObj.addLineBreak() 
+    pObj.addText('TERM WEIGHTS', { font_size: 11, bold: true })
+    pObj.addLineBreak()
+    Object.keys(data.terms).forEach(key => {
+      pObj.addText(`${key}: ${data.terms[key]}, `)
+    })
+
+    docx.putPageBreak()
   }
 
   pObj.endBookmark()
-  docx.putPageBreak()
 
   if (config.bookmarks) {
-    data.bookmarks.forEach(bookmark => {
-      var pObj = docx.createP()
-
-      pObj.startBookmark(bookmark._id)
-      pObj.addText('Back to Top', { hyperlink: 'top', color: '#5D9BE7' })
-
-      if (config.documents.number) {
-        pObj.addLineBreak()
-        pObj.addText(bookmark.AttributeValueMap.Number, { font_size: 20 })
-      }
-
-      if (config.documents.title) {
-        pObj.addLineBreak()
-        pObj.addText(bookmark.AttributeValueMap.Title, { font_size: 16 })
-      }
-
-      if (config.documents.dates) {
-        pObj.addLineBreak()
-
-        pObj.addText('Priority: ', { bold: true})
-        pObj.addText(bookmark.AttributeValueMap.PriorityDate)
-        pObj.addLineBreak()
-
-        pObj.addText('Filed: ', { bold: true })
-        pObj.addText(bookmark.AttributeValueMap.FilingDate)
-        pObj.addLineBreak()
-
-        pObj.addText('Published: ', { bold: true })
-        pObj.addText(bookmark.AttributeValueMap.PublicationDate)
-      }
-
-      pObj.addLineBreak()
-      pObj.addLineBreak()
-
-      const classifications = ['CooperativeClassifications', 'EuropeanClassifications', 'USClassifications', 'InternationalClassifications']
-
-      if (config.documents.classifications) {
-        classifications.forEach(classification => {
-          if (bookmark.AttributeValueMap[classification]) {
-            pObj.addText(`${classification}: `, { bold: true })
-            pObj.addText(`${bookmark.AttributeValueMap[classification].join()}`, { italic: true })
-  
-            pObj.addLineBreak()
-          }
-        })
-  
-        pObj.addLineBreak()
-      }
-
-      if (config.documents.images) {
-        pObj.addText('IMAGES', { font_size: 10, bold: true })
-        pObj.addLineBreak()
-  
-        var images = bookmark.AttributeValueMap.ImageUrls
-  
-        if (images.length > 0) {
-          images.forEach((url, i) => {
-            url = `http://patentimages.convergentai.net${url}`
-            pObj.addText(`${i + 1}${i + 1 === images.length ? '' : ','} `, { link: url, color: '#5D9BE7' })
-          })
-        } else {
-          pObj.addText('No images for this patent.')
-        }
-  
-        pObj.addLineBreak()
-        pObj.addLineBreak()
-      }
-
-      if (config.documents.abstract) {
-        pObj.addText('ABSTRACT', { font_size: 10, bold: true })
-        pObj.addLineBreak()
-        pObj.addText(bookmark.AttributeValueMap.Abstract, { font_size: 12 })
-  
-        pObj.addLineBreak()
-        pObj.addLineBreak()
-      }
-
-      if (config.documents.description) {
-        pObj.addText('DESCRIPTION', { font_size: 10, bold: true })
-        pObj.addLineBreak()
-        
-        bookmark.AttributeValueMap.Description.forEach(desc => {
-          pObj.addText(desc)
-          pObj.addLineBreak()
-        })
-      }
-
-      if (config.documents.claims) {
-        pObj.addLineBreak()
-        
-        pObj.addText('CLAIMS', { font_size: 10, bold: true })
-        pObj.addLineBreak()
-        
-        bookmark.AttributeValueMap.Claims.forEach(claim => {
-          pObj.addText(claim)
-          pObj.addLineBreak()
-        })
-      }
-
-      // if (config.documents.claims) {
-      //   console.log(bookmark.AttributeValueMap)
-      //   return
-      //   pObj.addText('CLAIMS', { font_size: 10, bold: true })
-      //   pObj.addLineBreak()
-      //   bookmark.AttributeValueMap.Claims.forEach(claim => {
-      //     pObj.addText(claim)
-      //     pObj.addLineBreak()
-      //     pObj.addLineBreak()
-      //   })
-      // }
-
-      pObj.endBookmark()
-
-      docx.putPageBreak()
-    })
+    addDocuments(data.bookmarks, docx, req.body, 'Bookmarked')
   }
 
   if (config.references) {
-    data.references.forEach(bookmark => {
-      var pObj = docx.createP()
-
-      pObj.startBookmark(`${bookmark._id}-ref`)
-      pObj.addText('Back to Top', { hyperlink: 'top', color: '#5D9BE7' })
-
-      if (config.documents.number) {
-        pObj.addLineBreak()
-        pObj.addText(bookmark.AttributeValueMap.Number, { font_size: 20 })
-      }
-
-      if (config.documents.title) {
-        pObj.addLineBreak()
-        pObj.addText(bookmark.AttributeValueMap.Title, { font_size: 16 })
-      }
-
-      if (config.documents.dates) {
-        pObj.addLineBreak()
-
-        pObj.addText('Priority: ', { bold: true})
-        pObj.addText(bookmark.AttributeValueMap.PriorityDate)
-        pObj.addLineBreak()
-
-        pObj.addText('Filed: ', { bold: true })
-        pObj.addText(bookmark.AttributeValueMap.FilingDate)
-        pObj.addLineBreak()
-
-        pObj.addText('Published: ', { bold: true })
-        pObj.addText(bookmark.AttributeValueMap.PublicationDate)
-      }
-      
-      pObj.addLineBreak()
-      pObj.addLineBreak()
-
-      const classifications = ['CooperativeClassifications', 'EuropeanClassifications', 'USClassifications', 'InternationalClassifications']
-
-      if (config.documents.classifications) {
-        classifications.forEach(classification => {
-          if (bookmark.AttributeValueMap[classification]) {
-            pObj.addText(`${classification}: `, { bold: true })
-            pObj.addText(`${bookmark.AttributeValueMap[classification].join()}`, { italic: true })
-  
-            pObj.addLineBreak()
-          }
-        })
-  
-        pObj.addLineBreak()
-      }
-
-      if (config.documents.images) {
-        pObj.addText('IMAGES', { font_size: 10, bold: true })
-        pObj.addLineBreak()
-  
-        var images = bookmark.AttributeValueMap.ImageUrls
-  
-        if (images.length > 0) {
-          images.forEach((url, i) => {
-            url = `http://patentimages.convergentai.net${url}`
-            pObj.addText(`${i + 1}${i + 1 === images.length ? '' : ','} `, { link: url, color: '#5D9BE7' })
-          })
-        } else {
-          pObj.addText('No images for this patent.')
-        }
-  
-        pObj.addLineBreak()
-        pObj.addLineBreak()
-      }
-
-      if (config.documents.abstract) {
-        pObj.addText('ABSTRACT', { font_size: 10, bold: true })
-        pObj.addLineBreak()
-        pObj.addText(bookmark.AttributeValueMap.Abstract, { font_size: 12 })
-  
-        pObj.addLineBreak()
-        pObj.addLineBreak()
-      }
-
-      // if (config.documents.claims) {
-      //   console.log(bookmark.AttributeValueMap)
-      //   return
-      //   pObj.addText('CLAIMS', { font_size: 10, bold: true })
-      //   pObj.addLineBreak()
-      //   bookmark.AttributeValueMap.Claims.forEach(claim => {
-      //     pObj.addText(claim)
-      //     pObj.addLineBreak()
-      //     pObj.addLineBreak()
-      //   })
-      // }
-
-      pObj.endBookmark()
-
-      docx.putPageBreak()
-    })
+    addDocuments(data.references, docx, req.body, 'Referenced')
   }
-
-  let endObj = docx.createP()
-
-  endObj.startBookmark('interest-model')
-
-  endObj.addText('Interest Model', { font_size: 16, bold: true })
-  endObj.addLineBreak()
-  endObj.addText('Back to Top', { hyperlink: 'top', color: '#5D9BE7' })
-  endObj.addLineBreak()
-  endObj.addLineBreak()
-
-  if (config.searches) {
-    // Searches and Bookmark Links
-    endObj.addText('SEARCHES', { font_size: 11, bold: true })
-    endObj.addLineBreak()
-    data.searches.forEach(search => {
-      endObj.addText(search)
-      endObj.addLineBreak()
-    })
-
-    endObj.addLineBreak()
-  }
-
-  if (config.uploads) {
-    // Searches and Bookmark Links
-    endObj.addText('UPLOADS', { font_size: 11, bold: true })
-    endObj.addLineBreak()
-    data.uploads.forEach(upload => {
-      endObj.addText(upload)
-      endObj.addLineBreak()
-    })
-
-    endObj.addLineBreak()
-  }
-
-  if (config.terms) {
-    endObj.addText('TERM WEIGHTS', { font_size: 11, bold: true })
-    endObj.addLineBreak()
-    Object.keys(data.terms).forEach(key => {
-      endObj.addText(`${key}: ${data.terms[key]}, `)
-    })
-  }
-
-  endObj.endBookmark()
 
   return docx
+}
+
+function addDocuments (docs, mainDoc, reqBody, type) {
+  let { data, config, projectName } = reqBody
+  let pObj = mainDoc.createP()
+
+  pObj.addText(`${type} Documents`, { font_size: 22 })
+  pObj.addLineBreak()
+
+  docs.forEach(doc => {
+    pObj.startBookmark(`${doc._id}-${type}`)
+    pObj.addText('Back to Top', { hyperlink: 'top', color: '#5D9BE7' })
+
+    if (config.documents.number) {
+      pObj.addLineBreak()
+      pObj.addText(doc.AttributeValueMap.Number, { font_size: 18 })
+    }
+
+    if (config.documents.title) {
+      pObj.addLineBreak()
+      pObj.addText(doc.AttributeValueMap.Title, { font_size: 16 })
+    }
+
+    if (config.documents.dates) {
+      pObj.addLineBreak()
+
+      pObj.addText('Priority: ', { bold: true})
+      pObj.addText(doc.AttributeValueMap.PriorityDate)
+      pObj.addLineBreak()
+
+      pObj.addText('Filed: ', { bold: true })
+      pObj.addText(doc.AttributeValueMap.FilingDate)
+      pObj.addLineBreak()
+
+      pObj.addText('Published: ', { bold: true })
+      pObj.addText(doc.AttributeValueMap.PublicationDate)
+    }
+
+    pObj.addLineBreak()
+    pObj.addLineBreak()
+
+    const classifications = ['CooperativeClassifications', 'EuropeanClassifications', 'USClassifications', 'InternationalClassifications']
+
+    if (config.documents.classifications) {
+      classifications.forEach(classification => {
+        if (doc.AttributeValueMap[classification]) {
+          pObj.addText(`${classification}: `, { bold: true })
+          if (doc.AttributeValueMap[classification].length > 0) {
+            pObj.addText(`${doc.AttributeValueMap[classification].join()}`, { italic: true })
+          } else {
+            pObj.addText('n/a', { italic: true })
+          }
+
+          pObj.addLineBreak()
+        }
+      })
+
+      pObj.addLineBreak()
+    }
+
+    if (config.documents.images) {
+      pObj.addText('IMAGES', { font_size: 10, bold: true })
+      pObj.addLineBreak()
+
+      var images = doc.AttributeValueMap.ImageUrls
+
+      if (images.length > 0) {
+        images.forEach((url, i) => {
+          url = `http://patentimages.convergentai.net${url}`
+          pObj.addText(`${i + 1}${i + 1 === images.length ? '' : ','} `, { link: url, color: '#5D9BE7' })
+        })
+      } else {
+        pObj.addText('No images for this patent.')
+      }
+
+      pObj.addLineBreak()
+      pObj.addLineBreak()
+    }
+
+    if (config.documents.inventors) {
+      pObj.addText('INVENTORS', { font_size: 10, bold: true })
+      pObj.addLineBreak()
+      if (doc.AttributeValueMap.Inventor && doc.AttributeValueMap.Inventor.length > 0) {
+        pObj.addText(doc.AttributeValueMap.Inventor.join(', '))
+      } else {
+        pObj.addText('n/a')
+      }
+      pObj.addLineBreak()
+      pObj.addLineBreak()
+    }
+
+    if (config.documents.assignees) {
+      pObj.addText('ASSIGNEES', { font_size: 10, bold: true })
+      pObj.addLineBreak()
+      if (doc.AttributeValueMap.Assignee && doc.AttributeValueMap.Assignee.length > 0) {
+        pObj.addText(doc.AttributeValueMap.Assignee.join(', '))
+      } else {
+        pObj.addText('n/a')
+      }
+      pObj.addLineBreak()
+      pObj.addLineBreak()
+    }
+
+    if (config.documents.abstract) {
+      pObj.addText('ABSTRACT', { font_size: 10, bold: true })
+      pObj.addLineBreak()
+      pObj.addText(doc.AttributeValueMap.Abstract, { font_size: 12 })
+
+      pObj.addLineBreak()
+      pObj.addLineBreak()
+    }
+
+    if (config.documents.description) {
+      pObj.addText('DESCRIPTION', { font_size: 10, bold: true })
+      pObj.addLineBreak()
+      
+      doc.AttributeValueMap.Description.forEach(desc => {
+        pObj.addText(desc)
+        pObj.addLineBreak()
+      })
+    }
+
+    if (config.documents.claims) {
+      pObj.addLineBreak()
+      
+      pObj.addText('CLAIMS', { font_size: 10, bold: true })
+      pObj.addLineBreak()
+      
+      doc.AttributeValueMap.Claims.forEach(claim => {
+        pObj.addText(claim)
+        pObj.addLineBreak()
+      })
+    }
+
+    pObj.addLineBreak()
+    pObj.addLineBreak()
+
+    pObj.endBookmark()
+
+    // mainDoc.putPageBreak()
+  })
 }
 
 // const options = {
