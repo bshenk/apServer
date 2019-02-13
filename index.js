@@ -107,7 +107,9 @@ function generateXlsx (req) {
       'Inventors'
     ])
 
-    data.bookmarks.forEach((bookmark, i) => {
+    data.bookmarkOrder.forEach((bookmarkID, i) => {
+      let bookmark = data.bookmarks.find(ele => ele._id === bookmarkID)
+      if (!bookmark) return
       let { 
         id, 
         Number, 
@@ -233,7 +235,7 @@ function generateXlsx (req) {
   }
 
   // set terms
-  if (config.inputs) {
+  if (config.outputs) {
     sheet.data.push(['TERMS'])
     sheet.data.push(Object.keys(data.terms).map(key => `${key}: ${data.terms[key]}`))
   }
@@ -289,7 +291,9 @@ function generateDocx (req) {
 
     pObj.addText('INDEX OF BOOKMARKED PATENTS (Click to Jump to Bookmark)', { font_size: 11, bold: true })
     pObj.addLineBreak()
-    data.bookmarks.forEach(bookmark => {
+    data.bookmarkOrder.forEach(id => {
+      let bookmark = data.bookmarks.find(ele => ele._id === id)
+      if (!bookmark) return
       pObj.addText(`${bookmark.AttributeValueMap.Number}: ${bookmark.AttributeValueMap.Title}`, { hyperlink: `${bookmark._id}-Bookmarked`, color: '#5D9BE7' })
       pObj.addLineBreak()
     })
@@ -303,6 +307,10 @@ function generateDocx (req) {
       pObj.addLineBreak()
     })
 
+    if (!config.outputs) docx.putPageBreak()
+  }
+
+  if (config.outputs) {
     pObj.addLineBreak() 
     pObj.addText('TERM WEIGHTS', { font_size: 11, bold: true })
     pObj.addLineBreak()
@@ -316,24 +324,30 @@ function generateDocx (req) {
   pObj.endBookmark()
 
   if (config.bookmarks) {
-    addDocuments(data.bookmarks, docx, req.body, 'Bookmarked')
+    addDocuments(docx, req.body, 'Bookmarked')
   }
 
   if (config.references) {
-    addDocuments(data.references, docx, req.body, 'Referenced')
+    addDocuments(docx, req.body, 'Referenced')
   }
 
   return docx
 }
 
-function addDocuments (docs, mainDoc, reqBody, type) {
+function addDocuments (mainDoc, reqBody, type) {
   let { data, config, projectName } = reqBody
   let pObj = mainDoc.createP()
 
   pObj.addText(`${type} Documents`, { font_size: 22 })
   pObj.addLineBreak()
 
-  docs.forEach(doc => {
+  let docs = type === 'Bookmarked' ? data.bookmarkOrder : data.references
+
+  docs.forEach(ele => {
+    let doc = ele
+    if (type === 'Bookmarked') doc = data.bookmarks.find(bookmark => bookmark._id === ele)
+    if (!doc) return
+
     pObj.startBookmark(`${doc._id}-${type}`)
     pObj.addText('Back to Top', { hyperlink: 'top', color: '#5D9BE7' })
 
