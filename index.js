@@ -208,7 +208,7 @@ function generateXlsx (req) {
         classifications ? InternationalClassifications.join(', ').substring(0, 30000) : '',
         classifications ? FieldClassifications.join(', ').substring(0, 30000) : '',
         classifications ? CooperativeClassifications.join(', ').substring(0, 30000) : '',
-        images ? ImageUrls.join(', ').substring(0, 30000) : '',
+        images ? ImageUrls.map(img => `http://patentimages.convergentai.net${img}`).join(', ').substring(0, 30000) : '',
         dates ? PriorityDate : '',
         dates ? FilingDate : '',
         dates ? PublicationDate : '',
@@ -343,7 +343,7 @@ function addDocuments (mainDoc, reqBody, type) {
 
   let docs = type === 'Bookmarked' ? data.bookmarkOrder : data.references
 
-  docs.forEach(ele => {
+  docs.forEach((ele, i) => {
     let doc = ele
     if (type === 'Bookmarked') doc = data.bookmarks.find(bookmark => bookmark._id === ele)
     if (!doc) return
