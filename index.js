@@ -260,18 +260,21 @@ function generateDocx (req) {
 
   const pObj = docx.createP()
 
+  let h1 = { font_size: 30 }
+  let h2 = { font_size: 20, bold: true }
+  let h3 = { font_size: 11, bold: true }
+
   pObj.startBookmark('top')
-  pObj.addText('PROJECT', { font_size: 10, bold: true })
+  pObj.addText('PROJECT', h3)
   pObj.addLineBreak()
-  pObj.addText(projectName, { font_size: 24 })
-  pObj.addLineBreak()
+  pObj.addText(projectName, h1)
   pObj.addLineBreak()
 
   if (config.inputs) {
-    pObj.addText('Interest Model Summary', { font_size: 18 })
+    pObj.addText('Interest Model Inputs', h2)
     pObj.addLineBreak()
 
-    pObj.addText('SEARCHES', { font_size: 11, bold: true })
+    pObj.addText('SEARCHED TERMS OF INTEREST', h3)
     pObj.addLineBreak()
     data.searches.forEach(search => {
       pObj.addText(search)
@@ -280,16 +283,17 @@ function generateDocx (req) {
 
     pObj.addLineBreak()
   
-    pObj.addText('UPLOADS', { font_size: 11, bold: true })
+    pObj.addText('UPLOADED TERMS OF INTEREST', h3)
     pObj.addLineBreak()
     data.uploads.forEach(upload => {
       pObj.addText(upload)
+      pObj.addLineBreak()
       pObj.addLineBreak()
     })
 
     pObj.addLineBreak()
 
-    pObj.addText('INDEX OF BOOKMARKED PATENTS (Click to Jump to Bookmark)', { font_size: 11, bold: true })
+    pObj.addText('BOOKMARKED PATENTS OF INTEREST', h3)
     pObj.addLineBreak()
     data.bookmarkOrder.forEach(id => {
       let bookmark = data.bookmarks.find(ele => ele._id === id)
@@ -300,7 +304,7 @@ function generateDocx (req) {
 
     pObj.addLineBreak()
 
-    pObj.addText('INDEX OF REFERENCED PATENTS (Click to Jump to Reference)', { font_size: 11, bold: true })
+    pObj.addText('REFERENCED PATENTS OF INTEREST', h3)
     pObj.addLineBreak()
     data.references.forEach(bookmark => {
       pObj.addText(`${bookmark.AttributeValueMap.Number}: ${bookmark.AttributeValueMap.Title}`, { hyperlink: `${bookmark._id}-Referenced`, color: '#5D9BE7' })
@@ -312,9 +316,30 @@ function generateDocx (req) {
 
   if (config.outputs) {
     pObj.addLineBreak() 
-    pObj.addText('TERM WEIGHTS', { font_size: 11, bold: true })
+    pObj.addText('WEIGHTED TERM MODEL', h3)
     pObj.addLineBreak()
+
+    let nonZeroTerms = {}
+    let zeroTerms = {}
+
     Object.keys(data.terms).forEach(key => {
+      let weight = data.terms[key]
+
+      if (weight > 0) {
+        nonZeroTerms[key] = weight
+      } else {
+        zeroTerms[key] = weight
+      }
+    })
+
+    Object.keys(nonZeroTerms).forEach(key => {
+      pObj.addText(`${key}: ${data.terms[key]}, `)
+    })
+
+    pObj.addLineBreak()
+    pObj.addLineBreak()
+
+    Object.keys(zeroTerms).forEach(key => {
       pObj.addText(`${key}: ${data.terms[key]}, `)
     })
 
@@ -338,7 +363,7 @@ function addDocuments (mainDoc, reqBody, type) {
   let { data, config, projectName } = reqBody
   let pObj = mainDoc.createP()
 
-  pObj.addText(`${type} Documents`, { font_size: 22 })
+  pObj.addText(`${type} Documents of Interest`, { font_size: 22 })
   pObj.addLineBreak()
 
   let docs = type === 'Bookmarked' ? data.bookmarkOrder : data.references
