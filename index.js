@@ -248,7 +248,7 @@ function generateDocx (req) {
 }
 
 function addRows (type, sheet, data, config) {
-  let { number, abstract, dates, title, images, classifications, description, claims, assignees, inventors } = config.documents
+  let { number, abstract, dates, title, images, classifications, description, claims, assignees, inventors, notes } = config.documents
 
   let header = ''
   let nodes = []
@@ -281,7 +281,8 @@ function addRows (type, sheet, data, config) {
     'Filing Date', 
     'Publication Date',
     'Assignees',
-    'Inventors'
+    'Inventors',
+    'Notes'
   ])
 
   nodes.forEach((node, i) => {
@@ -305,6 +306,8 @@ function addRows (type, sheet, data, config) {
       Inventor
     } = node.AttributeValueMap
 
+    let nodeNotes = data.notes[node._id] ? data.notes[node._id] : []
+
     sheet.data.push([
       number ? Number : '',
       title ? Title : '',
@@ -321,7 +324,8 @@ function addRows (type, sheet, data, config) {
       dates ? FilingDate : '',
       dates ? PublicationDate : '',
       assignees && Assignee ? Assignee.join(', ') : '',
-      inventors && Inventor ? Inventor.join(', ') : ''
+      inventors && Inventor ? Inventor.join(', ') : '',
+      notes ? nodeNotes.join(', ') : ''
     ])
   })
 
@@ -378,6 +382,24 @@ function addDocuments (mainDoc, reqBody, type) {
 
     const classifications = ['CooperativeClassifications', 'EuropeanClassifications', 'USClassifications', 'InternationalClassifications']
 
+    if (config.documents.notes) {
+      let nodeNotes = data.notes[doc._id] ? data.notes[doc._id] : []
+      pObj.addText('NOTES', { font_size: 10, bold: true })
+      pObj.addLineBreak()
+
+      if (nodeNotes.length > 0) {
+        nodeNotes.forEach((note, i) => {
+          pObj.addText(`${i+1}. ${note}`)
+          pObj.addLineBreak()
+        })
+      } else {
+        pObj.addText('n/a')
+        pObj.addLineBreak()
+      }
+        
+      pObj.addLineBreak()
+    }
+
     if (config.documents.classifications) {
       classifications.forEach(classification => {
         if (doc.AttributeValueMap[classification]) {
@@ -407,7 +429,7 @@ function addDocuments (mainDoc, reqBody, type) {
           pObj.addText(`${i + 1}${i + 1 === images.length ? '' : ','} `, { link: url, color: '#5D9BE7' })
         })
       } else {
-        pObj.addText('No images for this patent.')
+        pObj.addText('n/a')
       }
 
       pObj.addLineBreak()
