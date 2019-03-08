@@ -83,141 +83,16 @@ function generateXlsx (req) {
   sheet.data.push([projectName])
   sheet.data.push([''])
 
-  let { number, abstract, dates, title, images, classifications, description, claims, assignees, inventors } = config.documents
-
   if (config.bookmarks) {
-    // set bookmarks
-    sheet.data.push(['BOOKMARKS'])
-    sheet.data.push([
-      'Number', 
-      'Title', 
-      'Abstract',
-      'Description',
-      'Claims',
-      'US Class',
-      'EU Class', 
-      'Int Class', 
-      'Field Class', 
-      'Coop Class', 
-      'Images', 
-      'Priority Date', 
-      'Filing Date', 
-      'Publication Date',
-      'Assignees',
-      'Inventors'
-    ])
-
-    data.bookmarkOrder.forEach((bookmarkID, i) => {
-      let bookmark = data.bookmarks.find(ele => ele._id === bookmarkID)
-      if (!bookmark) return
-      let { 
-        id, 
-        Number, 
-        Title, 
-        Abstract, 
-        ImageUrls, 
-        USClassifications, 
-        EuropeanClassifications, 
-        InternationalClassifications, 
-        CooperativeClassifications, 
-        FieldClassifications,
-        PriorityDate,
-        PublicationDate,
-        FilingDate,
-        Description,
-        Claims,
-        Assignee,
-        Inventor
-      } = bookmark.AttributeValueMap
-
-      sheet.data.push([
-        number ? Number : '',
-        title ? Title : '',
-        abstract ? Abstract : '',
-        description ? Description.join(', ').substring(0, 30000) : '',
-        claims ? Claims.join(', ').substring(0, 30000) : '',
-        classifications ? USClassifications.join(', ').substring(0, 30000) : '',
-        classifications ? EuropeanClassifications.join(', ').substring(0, 30000) : '',
-        classifications ? InternationalClassifications.join(', ').substring(0, 30000) : '',
-        classifications ? FieldClassifications.join(', ').substring(0, 30000) : '',
-        classifications ? CooperativeClassifications.join(', ').substring(0, 30000) : '',
-        images ? ImageUrls.join(', ') : '',
-        dates ? PriorityDate : '',
-        dates ? FilingDate : '',
-        dates ? PublicationDate : '',
-        assignees && Assignee ? Assignee.join(', ') : '',
-        inventors && Inventor ? Inventor.join(', ') : ''
-      ])
-    })
-
-    sheet.data.push([''])
+    addRows('bookmarks', sheet, data, config)
   }
 
-  // set references
   if (config.references) {
-    // set bookmarks
-    sheet.data.push(['REFERENCES'])
-    sheet.data.push([
-      'Number', 
-      'Title', 
-      'Abstract', 
-      'Description',
-      'Claims',
-      'US Class',
-      'EU Class', 
-      'Int Class', 
-      'Field Class', 
-      'Coop Class', 
-      'Images', 
-      'Priority Date', 
-      'Filing Date', 
-      'Publication Date',
-      'Assignees',
-      'Inventors'
-    ])
+    addRows('referenced', sheet, data, config)
+  }
 
-    data.references.forEach((reference, i) => {
-      let { 
-        id, 
-        Number, 
-        Title, 
-        Abstract, 
-        ImageUrls, 
-        USClassifications, 
-        EuropeanClassifications, 
-        InternationalClassifications, 
-        CooperativeClassifications, 
-        FieldClassifications,
-        PriorityDate,
-        PublicationDate,
-        FilingDate,
-        Description,
-        Claims,
-        Assignee,
-        Inventor
-      } = reference.AttributeValueMap
-
-      sheet.data.push([
-        number ? Number : '',
-        title ? Title : '',
-        abstract ? Abstract : '',
-        description ? Description.join(', ').substring(0, 30000) : '',
-        claims ? Claims.join(', ').substring(0, 30000) : '',
-        classifications ? USClassifications.join(', ').substring(0, 30000) : '',
-        classifications ? EuropeanClassifications.join(', ').substring(0, 30000) : '',
-        classifications ? InternationalClassifications.join(', ').substring(0, 30000) : '',
-        classifications ? FieldClassifications.join(', ').substring(0, 30000) : '',
-        classifications ? CooperativeClassifications.join(', ').substring(0, 30000) : '',
-        images ? ImageUrls.map(img => `http://patentimages.convergentai.net${img}`).join(', ').substring(0, 30000) : '',
-        dates ? PriorityDate : '',
-        dates ? FilingDate : '',
-        dates ? PublicationDate : '',
-        assignees && Assignee ? Assignee.join(', ') : '',
-        inventors && Inventor ? Inventor.join(', ') : ''
-      ])
-    })
-
-    sheet.data.push([''])
+  if (config.saved) {
+    addRows('saved', sheet, data, config)
   }
 
   // set searches
@@ -304,6 +179,15 @@ function generateDocx (req) {
 
     pObj.addLineBreak()
 
+    pObj.addText('SAVED PATENTS OF INTEREST', h3)
+    pObj.addLineBreak()
+    data.saved.forEach(bookmark => {
+      pObj.addText(`${bookmark.AttributeValueMap.Number}: ${bookmark.AttributeValueMap.Title}`, { hyperlink: `${bookmark._id}-Saved`, color: '#5D9BE7' })
+      pObj.addLineBreak()
+    })
+
+    pObj.addLineBreak()
+
     pObj.addText('REFERENCED PATENTS OF INTEREST', h3)
     pObj.addLineBreak()
     data.references.forEach(bookmark => {
@@ -352,11 +236,96 @@ function generateDocx (req) {
     addDocuments(docx, req.body, 'Bookmarked')
   }
 
+  if (config.saved) {
+    addDocuments(docx, req.body, 'Saved')
+  }
+
   if (config.references) {
     addDocuments(docx, req.body, 'Referenced')
   }
 
   return docx
+}
+
+function addRows (type, sheet, data, config) {
+  let { number, abstract, dates, title, images, classifications, description, claims, assignees, inventors } = config.documents
+
+  let header = ''
+  let nodes = []
+
+  if (type === 'bookmarks') {
+    header = 'BOOKMARKS'
+    nodes = data.bookmarkOrder.map(id => data.bookmarks.find(ele => ele._id === id))
+  } else if (type === 'referenced') {
+    header = 'REFERENCED'
+    nodes = data.references
+  } else if (type === 'saved') {
+    header = 'SAVED'
+    nodes = data.saved
+  }
+
+  sheet.data.push([header])
+  sheet.data.push([
+    'Number', 
+    'Title', 
+    'Abstract',
+    'Description',
+    'Claims',
+    'US Class',
+    'EU Class', 
+    'Int Class', 
+    'Field Class', 
+    'Coop Class', 
+    'Images', 
+    'Priority Date', 
+    'Filing Date', 
+    'Publication Date',
+    'Assignees',
+    'Inventors'
+  ])
+
+  nodes.forEach((node, i) => {
+    let { 
+      id, 
+      Number, 
+      Title, 
+      Abstract, 
+      ImageUrls, 
+      USClassifications, 
+      EuropeanClassifications, 
+      InternationalClassifications, 
+      CooperativeClassifications, 
+      FieldClassifications,
+      PriorityDate,
+      PublicationDate,
+      FilingDate,
+      Description,
+      Claims,
+      Assignee,
+      Inventor
+    } = node.AttributeValueMap
+
+    sheet.data.push([
+      number ? Number : '',
+      title ? Title : '',
+      abstract ? Abstract : '',
+      description ? Description.join(', ').substring(0, 30000) : '',
+      claims ? Claims.join(', ').substring(0, 30000) : '',
+      classifications ? USClassifications.join(', ').substring(0, 30000) : '',
+      classifications ? EuropeanClassifications.join(', ').substring(0, 30000) : '',
+      classifications ? InternationalClassifications.join(', ').substring(0, 30000) : '',
+      classifications ? FieldClassifications.join(', ').substring(0, 30000) : '',
+      classifications ? CooperativeClassifications.join(', ').substring(0, 30000) : '',
+      images ? ImageUrls.join(', ') : '',
+      dates ? PriorityDate : '',
+      dates ? FilingDate : '',
+      dates ? PublicationDate : '',
+      assignees && Assignee ? Assignee.join(', ') : '',
+      inventors && Inventor ? Inventor.join(', ') : ''
+    ])
+  })
+
+  sheet.data.push([''])
 }
 
 function addDocuments (mainDoc, reqBody, type) {
@@ -366,7 +335,10 @@ function addDocuments (mainDoc, reqBody, type) {
   pObj.addText(`${type} Documents of Interest`, { font_size: 22 })
   pObj.addLineBreak()
 
-  let docs = type === 'Bookmarked' ? data.bookmarkOrder : data.references
+  let docs = [] 
+  if (type === 'Bookmarked') docs = data.bookmarkOrder 
+  if (type === 'Referenced') docs = data.references
+  if (type === 'Saved') docs = data.saved
 
   docs.forEach((ele, i) => {
     let doc = ele
