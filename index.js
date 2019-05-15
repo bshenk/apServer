@@ -109,6 +109,12 @@ function generateXlsx (req) {
     sheet.data.push([''])
   }
 
+  if (config.inputs) {
+    sheet.data.push(['ADDED'])
+    sheet.data.push(data.added)
+    sheet.data.push([''])
+  }
+
   // set terms
   if (config.outputs) {
     sheet.data.push(['TERMS'])
@@ -167,6 +173,17 @@ function generateDocx (req) {
     })
 
     pObj.addLineBreak()
+
+    pObj.addText('ADDED TERMS OF INTEREST', h3)
+    pObj.addLineBreak()
+    data.added.forEach(term => {
+      pObj.addText(term)
+      pObj.addLineBreak()
+      pObj.addLineBreak()
+    })
+
+    pObj.addLineBreak()
+
 
     pObj.addText('BOOKMARKED PATENTS OF INTEREST', h3)
     pObj.addLineBreak()
