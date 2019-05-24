@@ -14,7 +14,7 @@ function getMetricsCSV (config, users) {
   }
 
   return new Promise ((resolve, reject) => {
-    var url = `mongodb://${config.userName}:${config.password}@${config.host}:${config.port}/?authMechanism=DEFAULT&authSource=${config.authDB}`
+    var url = `mongodb://${config.userName}:${config.password}@localhost:${config.port}/?authMechanism=DEFAULT&authSource=${config.authDB}`
 
     var midnight = new Date();
     var oneWeekAgo = new Date();
